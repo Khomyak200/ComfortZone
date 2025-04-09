@@ -1,6 +1,8 @@
 import 'package:comfort_zone/data/models/air_model.dart';
 
 class CurrentWeather {
+  final double lon;
+  final double lat;
   final DateTime lastUpdated;
   final double tempC;
   final double tempF;
@@ -34,6 +36,8 @@ class CurrentWeather {
   final AirQuality? airQuality;
 
   CurrentWeather({
+    required this.lon,
+    required this.lat,
     required this.lastUpdated,
     required this.tempC,
     required this.tempF,
@@ -69,6 +73,8 @@ class CurrentWeather {
 
   factory CurrentWeather.fromJson(Map<String, dynamic> json) {
     return CurrentWeather(
+      lon: (json['location']['lon'] as num).toDouble(),
+      lat: (json['location']['lat'] as num).toDouble(),
       lastUpdated: DateTime.parse(json['current']['last_updated']),
       tempC: (json['current']['temp_c'] as num).toDouble(),
       tempF: (json['current']['temp_f'] as num).toDouble(),

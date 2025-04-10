@@ -142,17 +142,28 @@ class SwipeWrapper extends StatelessWidget {
                       end: Offset.zero,
                     ).chain(CurveTween(curve: Curves.ease)),
                   ),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: FractionallySizedBox(
-                      widthFactor: 0.8,
-                      child: const LocationSelectionScreen(),
-                    ),
+                  child: Stack(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          color: Colors.transparent,
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: 0.8,
+                          child: const LocationSelectionScreen(),
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },
             ),
           );
+
         }
       },
       child: child,
@@ -327,16 +338,21 @@ class HomeScreenContent extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       padding: const EdgeInsets.all(12),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(6, (index) => _hourBlock('16:00', Icons.wb_sunny, '9°', '1%')),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: List.generate(
+            12,
+                (index) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: _hourBlock('16:00', Icons.wb_sunny, '9°', '1%'),
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
+
 
   Widget _hourBlock(String time, IconData icon, String temp, String rain) {
     return Column(
@@ -371,16 +387,29 @@ class HomeScreenContent extends StatelessWidget {
 
   Widget _buildDailyForecast() {
     return Container(
-        width: double.infinity,
-    decoration: BoxDecoration(
-    color: Colors.white.withOpacity(0.15),
-    borderRadius: BorderRadius.circular(16),
-    ),
-    child: Column(
-      children: List.generate(5, (index) => _dayForecastRow('Сегодня', Icons.sunny, Icons.nightlight_round, '9°', '-1°', '1%')),
-    ),
+      width: double.infinity,
+      height: 210,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: 10,
+        itemBuilder: (context, index) {
+          return _dayForecastRow(
+            'Сегодня',
+            Icons.sunny,
+            Icons.nightlight_round,
+            '9°',
+            '-1°',
+            '1%',
+          );
+        },
+      ),
     );
   }
+
 
   Widget _dayForecastRow(String day, IconData icon,IconData iconNight, String high, String low, String rain) {
     return Padding(
@@ -700,11 +729,12 @@ class WindSheetContent extends StatelessWidget {
                     style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 16)),
+                const SizedBox(height: 8),
                 ComparisonBarWidget(
                   value1: 5.4,
                   value2: 2.2,
                   label1: 'Сегодня',
-                  label2: 'Вчера',
+                  label2: 'Завтра',
                 ),
               ],
             ),
@@ -1083,11 +1113,12 @@ class PrecipitationSheetContent extends StatelessWidget {
                     style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 16)),
+                const SizedBox(height: 8),
                 ComparisonBarWidget(
                   value1: 5.4,
                   value2: 2.2,
                   label1: 'Сегодня',
-                  label2: 'Вчера',
+                  label2: 'Завтра',
                 ),
               ],
             ),
@@ -1214,11 +1245,12 @@ class HumiditySheetContent extends StatelessWidget {
                     style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 16)),
+                const SizedBox(height: 8),
                 ComparisonBarWidget(
                   value1: 5.4,
                   value2: 2.2,
                   label1: 'Сегодня',
-                  label2: 'Вчера',
+                  label2: 'Завтра',
                 ),
               ],
             ),
@@ -1377,11 +1409,12 @@ class UvIndexSheetContent extends StatelessWidget {
                     style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 16)),
+                const SizedBox(height: 8),
                 ComparisonBarWidget(
                   value1: 5.4,
                   value2: 2.2,
                   label1: 'Сегодня',
-                  label2: 'Вчера',
+                  label2: 'Завтра',
                 ),
               ],
             ),
@@ -1425,7 +1458,6 @@ class UvIndexSheetContent extends StatelessWidget {
     );
   }
 }
-// Шкала Бофорта (1 виджет)
 
 class BeaufortScaleWidget extends StatelessWidget {
   const BeaufortScaleWidget({super.key});
@@ -1451,27 +1483,55 @@ class BeaufortScaleWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Шкала Бофорта',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
         const SizedBox(height: 8),
         Column(
           children: List.generate(levels.length, (index) {
             final level = levels[index];
+            final color = level['color'] as Color;
+
             return Container(
               margin: const EdgeInsets.symmetric(vertical: 4),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: level['color'] as Color,
+                color: Colors.white.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Уровень $index', style: const TextStyle(color: Colors.white)),
-                  Text(level['label'] as String, style: const TextStyle(color: Colors.white)),
-                  Text(level['speed'] as String, style: const TextStyle(color: Colors.white)),
+                  Container(
+                    width: 30,
+                    height: 30,
+                    margin: const EdgeInsets.only(right: 12),
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '$index',
+                      style: TextStyle(
+                        color: (index == 0 || index == 1 || index == 7) ? Colors.black : Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          level['label'] as String,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+
+                      ],
+                    ),
+                  ),
+                  Text(
+                    level['speed'] as String,
+                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
+                  ),
                 ],
               ),
             );
@@ -1482,9 +1542,7 @@ class BeaufortScaleWidget extends StatelessWidget {
   }
 }
 
-//   child: BeaufortScaleWidget(),
 
-// Сравнение двух показателей (2 виджет)
 class ComparisonBarWidget extends StatelessWidget {
   final double value1;
   final double value2;
@@ -1507,33 +1565,27 @@ class ComparisonBarWidget extends StatelessWidget {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [Text(label1), Text(value1.toString())],
+          children: [Text(label1, style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 18 )), Text(value1.toString(), style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 18,  fontWeight: FontWeight.bold, ))],
         ),
         LinearProgressIndicator(
           value: value1 / max,
           minHeight: 8,
-          color: Colors.green,
+          color: Color(0xFF145D91),
         ),
         const SizedBox(height: 4),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [Text(label2), Text(value2.toString())],
+          children: [Text(label2, style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 18 )), Text(value2.toString(), style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 18,  fontWeight: FontWeight.bold, ))],
         ),
         LinearProgressIndicator(
           value: value2 / max,
           minHeight: 8,
-          color: Colors.orange,
+          color: Color(0xFF145D91),
         ),
       ],
     );
   }
 }
- // ComparisonBarWidget(
- // value1: 5.4,
- // value2: 2.2,
- // label1: 'Сегодня',
- // label2: 'Вчера',
- // ),
 
 class CustomLineChart extends StatelessWidget {
   final List<FlSpot> points;
@@ -1553,41 +1605,145 @@ class CustomLineChart extends StatelessWidget {
       aspectRatio: 1.6,
       child: LineChart(
         LineChartData(
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(showTitles: true),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(showTitles: true),
+          backgroundColor: Colors.transparent,
+
+          clipData: const FlClipData.none(),
+          extraLinesData: ExtraLinesData(
+            verticalLines: [
+              VerticalLine(
+                x: _getMiddleX(),
+                color: Colors.white,
+                strokeWidth: 1,
+                dashArray: [5, 5],
+              ),
+            ],
+          ),
+          lineTouchData: LineTouchData(enabled: false),
+          minX: points.first.x,
+          maxX: points.last.x,
+          minY: _getMinY(),
+          maxY: _getMaxY(),
+
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            getDrawingHorizontalLine: (value) => FlLine(
+              color: Colors.white.withOpacity(0.1),
+              strokeWidth: 1,
             ),
           ),
+
+          titlesData: FlTitlesData(
+            show: true,
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 25,
+                interval: _getYInterval(),
+                getTitlesWidget: (value, meta) {
+                  return Text(
+                    value.toStringAsFixed(0),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                },
+              ),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 35,
+                interval: _getXInterval(),
+                getTitlesWidget: (value, meta) {
+                  return Text(
+                    value.toStringAsFixed(0),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                },
+              ),
+            ),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+
+          borderData: FlBorderData(
+            show: true,
+            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+          ),
+
           lineBarsData: [
             LineChartBarData(
               spots: points,
               isCurved: true,
+              color: Colors.blueAccent,
               barWidth: 3,
-              color: Colors.blue,
+              belowBarData: BarAreaData(
+                show: true,
+                color: Colors.blueAccent.withOpacity(0.2),
+              ),
               dotData: FlDotData(show: false),
             ),
+
+            LineChartBarData(
+              spots: [
+                FlSpot(_getMiddleX(), _getMinY()),
+                FlSpot(_getMiddleX(), _getMiddleY()),
+              ],
+              isCurved: false,
+              color: Colors.white,
+              barWidth: 1,
+              dashArray: [5, 5],
+              dotData: FlDotData(show: false),
+              belowBarData: BarAreaData(show: false),
+            ),
+
           ],
-          gridData: FlGridData(show: true),
-          borderData: FlBorderData(show: true),
         ),
       ),
     );
   }
+
+  double _getMinY() {
+    final min = points.map((e) => e.y).reduce((a, b) => a < b ? a : b);
+    return min - ((min.abs() * 0.05).clamp(0.5, 5));
+  }
+
+  double _getMaxY() {
+    final max = points.map((e) => e.y).reduce((a, b) => a > b ? a : b);
+    return max + ((max.abs() * 0.05).clamp(0.5, 5));
+  }
+
+  double _getXInterval() {
+    if (points.length <= 4) return 1;
+    return ((points.last.x - points.first.x) / 4).ceilToDouble();
+  }
+
+  double _getYInterval() {
+    final minY = _getMinY();
+    final maxY = _getMaxY();
+    return ((maxY - minY) / 4).ceilToDouble();
+  }
+  double _getMiddleX() {
+    if (points.isEmpty) return 0;
+    int middleIndex = points.length.isOdd
+        ? (points.length ~/ 2)
+        : (points.length ~/ 2) - 1;
+    return points[middleIndex].x;
+  }
+  double _getMiddleY() {
+    if (points.isEmpty) return 0;
+    int middleIndex = points.length.isOdd
+        ? (points.length ~/ 2)
+        : (points.length ~/ 2) - 1;
+    return points[middleIndex].y;
+  }
+
 }
-// CustomLineChart(
-// points: [
-// FlSpot(0, 5),
-// FlSpot(3, 9),
-// FlSpot(6, 12),
-// FlSpot(9, 15),
-// FlSpot(12, 17),
-// FlSpot(15, 16),
-// FlSpot(18, 13),
-// FlSpot(21, 10),
-// ],
-// xUnit: 'часы',
-// yUnit: '°C',
-// ),
+

@@ -115,7 +115,7 @@ class SineWavePainter extends CustomPainter {
   void _drawTitle(Canvas canvas, Size size) {
     TextPainter textPainter = TextPainter(
       text: TextSpan(
-        text: title,
+        text:title,
         style: TextStyle(color: Colors.white, fontSize: 55, fontWeight: FontWeight.bold),
       ),
       textAlign: TextAlign.left,

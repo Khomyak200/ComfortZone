@@ -493,7 +493,7 @@ class HomeScreenContent extends StatelessWidget {
           Center(
             child: Text(
               'Закат в '+title  ,
-              style: TextStyle(color: Colors.white, fontSize: 10),
+              style:TextStyle(color: Colors.white, fontSize: 10),
             ),
           ),
         ],

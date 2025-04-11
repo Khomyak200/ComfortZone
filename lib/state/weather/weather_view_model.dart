@@ -34,6 +34,7 @@ class WeatherViewModel extends ChangeNotifier {
   WarningsModel? _stormWarning;
   List<Marine>? _marine;
   bool _isLoading = false;
+  bool _isDataLoaded = false;
   String? _error;
 
   CurrentWeather? get weatherInfo => _weatherInfo;
@@ -43,6 +44,7 @@ class WeatherViewModel extends ChangeNotifier {
   WarningsModel? get stormWarning => _stormWarning;
   List<Marine>? get marine => _marine;
   bool get isLoading => _isLoading;
+  bool get isDataLoaded => _isDataLoaded;
   String? get error => _error;
 
   Future<void> fetchWeather(String city, int days, String lang) async {
@@ -57,6 +59,7 @@ class WeatherViewModel extends ChangeNotifier {
       _agroWarning = await getAgroWarning();
       _stormWarning = await getStormWarning();
       _marine = await getMarine(city, days, lang);
+      _isDataLoaded = true;
     } catch (e) {
       _error = e.toString();
     } finally {

@@ -1,8 +1,12 @@
+import 'package:comfort_zone/data/models/hour_model.dart';
+import 'package:comfort_zone/data/models/warning_info_item_model.dart';
+import 'package:comfort_zone/state/weather/weather_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:comfort_zone/presentation/screens/profiles_screen.dart';
 import 'package:comfort_zone/presentation/screens/settings_screen.dart';
 import 'package:comfort_zone/presentation/screens/location_selection_screen.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,30 +16,36 @@ class HomeScreen extends StatefulWidget {
 }
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  List<Map<String, dynamic>> _notifications = [
+  List<WarningItem> _notifications = [];
+  late WeatherViewModel _weatherViewModel;
 
-  ];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _weatherViewModel = Provider.of<WeatherViewModel>(context, listen: false);
+  }
+
   @override
   void initState() {
     super.initState();
-    _notifications = [
-      {'message': 'Гроза в течение ближайшего часа', 'type': 2},
-      {'message': 'Сильный ветер', 'type': 1},
-      {'message': 'Повышенный уровень УФ-индекса', 'type': 1},
-   ];
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final vm = Provider.of<WeatherViewModel>(context, listen: false);
+      if (!vm.isDataLoaded) vm.fetchWeather("Minsk,by", 10, "ru");
+    });
+
   }
   bool get hasThreats {
-    return _notifications.any((notification) => notification['type'] == 2);
+    return _notifications.any((notification) => notification.level == "red");
+  }
+
+  bool get hasDangers{
+    return _notifications.any((notification) => notification.level == "orange");
   }
 
   bool get hasWarnings {
-    return _notifications.any((notification) => notification['type'] == 1);
+    return _notifications.any((notification) => notification.level == "yellow");
   }
-  final List<Widget> _screens = [
-    const SwipeWrapper(child: HomeScreenContent()),
-    const ProfilesScreen(),
-    const SettingsScreen(),
-  ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -86,38 +96,51 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
 
-    return Scaffold(
+    return Consumer<WeatherViewModel>(
+      builder: (context, vm, _) {
+        if (!vm.isDataLoaded) return Center(child: CircularProgressIndicator());
+        if (vm.error != null) return Center(child: Text(vm.error!));
+        _notifications = _weatherViewModel.stormWarning!.items;
+        final List<Widget> _screens = [
+          SwipeWrapper(child: HomeScreenContent(weatherViewModel: _weatherViewModel,)),
+          const ProfilesScreen(),
+          const SettingsScreen(),
+        ];
 
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        backgroundColor: Color (0xFF2592E1),
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white,
-        type: BottomNavigationBarType.fixed,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: '',
+        return Scaffold(
+          body: _screens[_selectedIndex],
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            backgroundColor: Color (0xFF2592E1),
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.white,
+            type: BottomNavigationBarType.fixed,
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.list),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.settings),
+                label: '',
+              ),
+            ],
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: '',
-          ),
-        ],
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-      ),
+        );
+      }
     );
   }
 
 
 }
+
 class SwipeWrapper extends StatelessWidget {
   final Widget child;
 
@@ -140,28 +163,17 @@ class SwipeWrapper extends StatelessWidget {
                       end: Offset.zero,
                     ).chain(CurveTween(curve: Curves.ease)),
                   ),
-                  child: Stack(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Container(
-                          color: Colors.transparent,
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: FractionallySizedBox(
-                          widthFactor: 0.8,
-                          child: const LocationSelectionScreen(),
-                        ),
-                      ),
-                    ],
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      widthFactor: 0.8,
+                      child: const LocationSelectionScreen(),
+                    ),
                   ),
                 );
               },
             ),
           );
-
         }
       },
       child: child,
@@ -170,12 +182,13 @@ class SwipeWrapper extends StatelessWidget {
 
 }
 class _NotificationsPanel extends StatelessWidget {
-  final List<Map<String, dynamic>> notifications;
+  final List<WarningItem> notifications;
 
   const _NotificationsPanel({super.key, required this.notifications});
 
   @override
   Widget build(BuildContext context) {
+
     return Material(
       color: const Color(0xFF469EE0),
       child: SafeArea(
@@ -215,10 +228,10 @@ class _NotificationsPanel extends StatelessWidget {
                     child: ListTile(
                       leading: Icon(
                         Icons.warning,
-                        color: notification['type'] == 2 ? Colors.redAccent : Colors.yellowAccent, // Red for threat, Yellow for warning
+                        color: notification.level == "red" ? Colors.redAccent : (notification.level == "orange"? Colors.orangeAccent : Colors.yellowAccent), // Red for threat, Yellow for warning
                       ),
                       title: Text(
-                        notification['message'],
+                        notification.description,
                         style: const TextStyle(color: Colors.white),
                       ),
                     ),
@@ -237,7 +250,8 @@ class _NotificationsPanel extends StatelessWidget {
 }
 
 class HomeScreenContent extends StatelessWidget {
-  const HomeScreenContent({super.key});
+  final WeatherViewModel weatherViewModel;
+  HomeScreenContent({super.key, required this.weatherViewModel});
 
   @override
   Widget build(BuildContext context) {
@@ -276,17 +290,19 @@ class HomeScreenContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: const [
+              children: [
                 Text(
-                  '9°',
-                  style: TextStyle(fontSize: 72, fontWeight: FontWeight.bold, color: Colors.white),
+                  '${weatherViewModel.weatherInfo?.tempC.toString() as String} ',
+                  style: const TextStyle(fontSize: 72, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
-                Icon(Icons.wb_cloudy, color: Colors.grey, size: 60),
+                Image.network('https:${weatherViewModel.weatherInfo?.conditionIcon as String}',
+                              width:  60,
+                              height: 60,),
               ],
             ),
-            const Text(
-              'Значительная облачность',
-              style: TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold,),
+            Text(
+              weatherViewModel.weatherInfo?.conditionText as String,
+              style: const TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold,),
             ),
             const SizedBox(height: 20),
             Row(
@@ -297,7 +313,7 @@ class HomeScreenContent extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            const Text('9° / -1°  Ощущается как 8°', style: TextStyle(color: Colors.white60,fontSize: 18)),
+            Text('${weatherViewModel.forecast?[0].maxtempC}° / ${weatherViewModel.forecast?[0].mintempC}°  Ощущается как ${weatherViewModel.weatherInfo?.feelsLikeC}°', style: TextStyle(color: Colors.white60,fontSize: 18)),
             const SizedBox(height: 20),
           ],
         ),
@@ -309,6 +325,8 @@ class HomeScreenContent extends StatelessWidget {
               Icons.warning,
               color: (parentState?.hasThreats ?? false)
                   ? Colors.red
+                  : (parentState?.hasDangers ?? false)
+                  ? Colors.orange
                   : (parentState?.hasWarnings ?? false)
                   ? Colors.yellow
                   : Colors.white,
@@ -327,6 +345,27 @@ class HomeScreenContent extends StatelessWidget {
 
 
   Widget _buildHourlyForecast() {
+    const int count = 12;
+    DateTime dt = DateTime.now();
+
+    List<HourInfo> hourData = [];
+    int itemsCount = 0;
+    bool isNextDay = false;
+    for (int i = 0; itemsCount < 12; i++){
+      if (!isNextDay && weatherViewModel.forecast![0].hour[i].date.hour > dt.hour) {
+        hourData.add(weatherViewModel.forecast![0].hour[i]);
+        itemsCount++;
+      } else if (isNextDay){
+        hourData.add(weatherViewModel.forecast![1].hour[i]);
+        itemsCount++;
+      }
+
+      if (i == 23) {
+        isNextDay = true;
+        i = 0;
+      }
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.15),
@@ -337,10 +376,12 @@ class HomeScreenContent extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: List.generate(
-            12,
+            count,
                 (index) => Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: _hourBlock('16:00', Icons.wb_sunny, '9°', '1%'),
+              child: _hourBlock('${convertDate(hourData[index].date.hour)}:00', 'https:${hourData[index].conditionIcon}', 
+                '${hourData[index].tempC}°', 
+                '${hourData[index].chanceOfRain > hourData[index].chanceOfSnow ? hourData[index].chanceOfRain : hourData[index].chanceOfRain}%'),
             ),
           ),
         ),
@@ -349,12 +390,13 @@ class HomeScreenContent extends StatelessWidget {
   }
 
 
-  Widget _hourBlock(String time, IconData icon, String temp, String rain) {
+  Widget _hourBlock(String time, String icon, String temp, String rain) {
     return Column(
       children: [
         Text(time, style: const TextStyle(color: Colors.white)),
         const SizedBox(height: 4),
-        Icon(icon, color: Colors.orange),
+        Image.network(icon,
+          width: 32,),
         const SizedBox(height: 4),
         Text(temp, style: const TextStyle(color: Colors.white)),
         const SizedBox(height: 4),
@@ -393,30 +435,77 @@ class HomeScreenContent extends StatelessWidget {
         itemCount: 10,
         itemBuilder: (context, index) {
           return _dayForecastRow(
-            'Сегодня',
-            Icons.sunny,
-            Icons.nightlight_round,
-            '9°',
-            '-1°',
-            '1%',
+            '${convertDate(weatherViewModel.forecast?[index].date.day)}.${convertDate(weatherViewModel.forecast?[index].date.month)}',
+            'https:${weatherViewModel.forecast?[index].hour[11].conditionIcon}',
+            'https:${weatherViewModel.forecast?[index].hour[0].conditionIcon}',
+            '${weatherViewModel.forecast?[index].hour[11].tempC}',
+            '${weatherViewModel.forecast?[index].hour[0].tempC}',
+            '${weatherViewModel.forecast![index].dailyChanceOfRain > weatherViewModel.forecast![index].dailyChanceOfSnow ? weatherViewModel.forecast![index].dailyChanceOfRain : weatherViewModel.forecast![index].dailyChanceOfSnow}',
           );
         },
       ),
     );
   }
 
+  String convertDate(int? date){
+    if (date == null) return '';
+    if (date < 10) {
+      return '0$date';
+    }
+    return date.toString();
+  }
 
-  Widget _dayForecastRow(String day, IconData icon,IconData iconNight, String high, String low, String rain) {
+
+  Widget _dayForecastRow(String day, String icon, String iconNight, String high, String low, String rain) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0,horizontal: 20.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(day, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          Icon(icon, color: Colors.orange),
-          Icon(iconNight, color: Colors.white),
-          Text('$high / $low', style: const TextStyle(color: Colors.white)),
-          Text(rain, style: const TextStyle(color: Colors.white)),
+          Expanded(
+            flex: 1,
+            child: Column(
+              children: [
+                Text(day, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Column(
+              children: [
+                Image.network(icon,
+                  width: 32,),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Column(
+              children: [
+                Image.network(iconNight,
+                  width: 32,),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Center(
+              child: Column(
+                children: [
+                  Text('$high / $low', style: const TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Column(
+              children: [
+                Text(rain, style: const TextStyle(color: Colors.white)),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -570,14 +659,14 @@ class HomeScreenContent extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Пыльца: ', style: TextStyle(color: Colors.white, fontSize: 20)),
-                  Text('Низкая', style: TextStyle(color: Colors.white, fontSize: 20)),
+                  Text('Облачность: ', style: TextStyle(color: Colors.white, fontSize: 20)),
+                  Text('${weatherViewModel.weatherInfo?.cloud}%', style: TextStyle(color: Colors.white, fontSize: 20)),
                 ],
               ),
             ),
@@ -586,8 +675,8 @@ class HomeScreenContent extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Магнитное поле:', style: TextStyle(color: Colors.white, fontSize: 20)),
-                  Text('Умеренное', style: TextStyle(color: Colors.white, fontSize: 20)),
+                  Text('Порывы ветра:', style: TextStyle(color: Colors.white, fontSize: 20)),
+                  Text('до ${weatherViewModel.weatherInfo?.gustKph} км/ч', style: TextStyle(color: Colors.white, fontSize: 20)),
                 ],
               ),
             ),
@@ -597,7 +686,7 @@ class HomeScreenContent extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Давление:', style: TextStyle(color: Colors.white, fontSize: 20)),
-                  Text('1012 гПа', style: TextStyle(color: Colors.white, fontSize: 20)),
+                  Text('${weatherViewModel.weatherInfo?.pressureMb} гПа', style: TextStyle(color: Colors.white, fontSize: 20)),
                 ],
               ),
             ),

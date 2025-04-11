@@ -116,14 +116,15 @@ class SineWavePainter extends CustomPainter {
     TextPainter textPainter = TextPainter(
       text: TextSpan(
         text: title,
-        style: TextStyle(color: Colors.white, fontSize: 60, fontWeight: FontWeight.bold),
+        style: TextStyle(color: Colors.white, fontSize: 55, fontWeight: FontWeight.bold),
       ),
+      textAlign: TextAlign.left,
       textDirection: TextDirection.ltr,
     );
 
     textPainter.layout();
     double x = (size.width - textPainter.width) / 2;
-    textPainter.paint(canvas, Offset(x, -30)); // Подняли заголовок выше
+    textPainter.paint(canvas, Offset(x, -50)); // Подняли заголовок выше
   }
 
   @override

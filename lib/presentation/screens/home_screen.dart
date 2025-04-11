@@ -449,8 +449,8 @@ class HomeScreenContent extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      height: 600,
-      padding: const EdgeInsets.all(60),
+      height: 300,
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(16),
@@ -465,28 +465,35 @@ class HomeScreenContent extends StatelessWidget {
               Icon(
                 Icons.wb_sunny, // Используем иконку солнца
                 color: Colors.white,
-                size: 30, // Размер иконки
+                size: 20, // Размер иконки
               ),
-              const SizedBox(width: 8), // Отступ между иконкой и текстом
+              const SizedBox(width: 4), // Отступ между иконкой и текстом
               const Text(
                 'Восход солнца',
-                style: TextStyle(color: Colors.white, fontSize: 24),
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ],
+          ),
+          // Затем добавляем график и текст заката
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 70.0), // Укажите нужный размер отступа
+                child: Expanded(
+                  child: SunSineChart(
+                    sunrise: sunrise,
+                    sunset: sunset,
+                    size: 330, // Или любой необходимый размер
+                  ),
+                ),
               ),
             ],
           ),
 
-          // Затем добавляем график и текст заката
-          Expanded(
-            child: SunSineChart(
-              sunrise: sunrise,
-              sunset: sunset,
-              size: 800, // Или любой необходимый размер
-            ),
-          ),
           Center(
             child: Text(
               'Закат в '+title  ,
-              style: TextStyle(color: Colors.white, fontSize: 30),
+              style: TextStyle(color: Colors.white, fontSize: 10),
             ),
           ),
         ],

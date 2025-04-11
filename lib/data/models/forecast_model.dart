@@ -19,9 +19,9 @@ class Forecast {
   final double avgvisMiles;
   final double avghumidity;
   final bool dailyWillItRain;
-  final bool dailyChanceOfRain;
+  final int dailyChanceOfRain;
   final bool dailyWillItSnow;
-  final bool dailyChanceOfSnow;
+  final int dailyChanceOfSnow;
   final String conditionText;
   final String conditionIcon;
   final int code;
@@ -91,9 +91,9 @@ class Forecast {
       avgvisMiles: (json['day']['avgvis_miles'] as num).toDouble(),
       avghumidity: (json['day']['avghumidity'] as num).toDouble(),
       dailyWillItRain: json['day']['daily_will_it_rain'] == 1,
-      dailyChanceOfRain: json['day']['daily_chance_of_rain'] == 1,
+      dailyChanceOfRain: (json['day']['daily_chance_of_rain'] as num).toInt(),
       dailyWillItSnow: json['day']['daily_will_it_snow'] == 1,
-      dailyChanceOfSnow: json['day']['daily_chance_of_snow'] == 1,
+      dailyChanceOfSnow: (json['day']['daily_chance_of_snow'] as num).toInt(),
       conditionText: json['day']['condition']['text'] as String,
       conditionIcon: json['day']['condition']['icon'] as String,
       code: json['day']['condition']['code'] as int,

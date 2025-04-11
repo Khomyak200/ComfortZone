@@ -85,8 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    bool hasThreats = _notifications.any((notification) => notification['type'] == 2);
-    bool hasWarnings = _notifications.any((notification) => notification['type'] == 1);
 
     return Scaffold(
 
@@ -178,9 +176,6 @@ class _NotificationsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool hasThreats = notifications.any((notification) => notification['type'] == 2);
-    bool hasWarnings = notifications.any((notification) => notification['type'] == 1);
-
     return Material(
       color: const Color(0xFF469EE0),
       child: SafeArea(

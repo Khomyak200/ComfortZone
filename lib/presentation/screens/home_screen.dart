@@ -7,6 +7,11 @@ import 'package:comfort_zone/presentation/screens/settings_screen.dart';
 import 'package:comfort_zone/presentation/screens/location_selection_screen.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
+import 'package:comfort_zone/presentation/widgets/sunrise.dart';
+import 'package:comfort_zone/presentation/widgets/humidity_widget.dart';
+import 'package:comfort_zone/presentation/widgets/rainfall.dart';
+import 'package:comfort_zone/presentation/widgets/uv_index.dart';
+import 'package:comfort_zone/presentation/widgets/wind_info_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -415,19 +420,76 @@ class HomeScreenContent extends StatelessWidget {
     );
   }
 
+  DateTime _parseTime(String time) {
+    final parts = time.split(':');
+    return DateTime(2023, 1, 1, int.parse(parts[0]), int.parse(parts[1]));
+  }
+
   Widget _buildSunsetCard() {
+    String sunriseTime = '06:30'; // Пример времени восхода
+    String sunsetTime = '18:45'; // Пример времени заката
+    DateTime sunrise = _parseTime(sunriseTime);
+    DateTime sunset = _parseTime(sunsetTime);
+
+    String hours;
+    String minutes;
+    String title;
+    if (sunset.hour<12)
+      hours = '0'+sunset.hour.toString();
+    else
+      hours = sunset.hour.toString();
+
+    if (sunset.minute<10)
+      minutes ='0'+sunset.minute.toString();
+    else
+      minutes =sunset.minute.toString();
+
+    title = hours+':'+minutes;
+
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      height: 600,
+      padding: const EdgeInsets.all(60),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Center(
-        child: Text(
-          'Закат в 19:36',
-          style: TextStyle(color: Colors.white, fontSize: 18),
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Добавляем Row для иконки и текста
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.wb_sunny, // Используем иконку солнца
+                color: Colors.white,
+                size: 30, // Размер иконки
+              ),
+              const SizedBox(width: 8), // Отступ между иконкой и текстом
+              const Text(
+                'Восход солнца',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ],
+          ),
+
+          // Затем добавляем график и текст заката
+          Expanded(
+            child: SunSineChart(
+              sunrise: sunrise,
+              sunset: sunset,
+              size: 800, // Или любой необходимый размер
+            ),
+          ),
+          Center(
+            child: Text(
+              'Закат в '+title  ,
+              style: TextStyle(color: Colors.white, fontSize: 30),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -523,22 +585,10 @@ class HomeScreenContent extends StatelessWidget {
 
   Widget _buildInfoButtons(BuildContext context) {
     final items = [
-      {
-        'label': 'Ветер',
-        'icon': Icons.air,
-      },
-      {
-        'label': 'Осадки',
-        'icon': Icons.grain,
-      },
-      {
-        'label': 'Влажность',
-        'icon': Icons.water_drop,
-      },
-      {
-        'label': 'УФ-индекс',
-        'icon': Icons.wb_sunny,
-      },
+      {'label': 'Ветер', 'icon': Icons.air},
+      {'label': 'Осадки', 'icon': Icons.grain},
+      {'label': 'Влажность', 'icon': Icons.water_drop},
+      {'label': 'УФ-индекс', 'icon': Icons.wb_sunny},
     ];
 
     return LayoutBuilder(
@@ -566,6 +616,70 @@ class HomeScreenContent extends StatelessWidget {
 
 
   Widget _infoButton(String label, IconData icon, double size, BuildContext context) {
+    // wind
+    int windSpeed = 22;
+    int windGusts = 44;
+    int direction = 320;
+
+    // uv_index
+    int uvIndex = 3;
+
+    // humidity data
+    int humidity = 65; // Пример значения влажности
+    double dewPoint = 14.5; // Пример значения точки росы
+
+    // sunrise
+    String sunriseTime = '06:30'; // Пример времени восхода
+    String sunsetTime = '18:45'; // Пример времени заката
+    DateTime sunrise = _parseTime(sunriseTime);
+    DateTime sunset = _parseTime(sunsetTime);
+
+    double illuminationPercentage = 0.11;
+
+    Widget content;
+
+    // rainfall
+    int sizeRainfall=3;
+
+    // Условие для замены на компас, если метка - "Ветер"
+    if (label == 'Ветер') {
+      content = WindInfoWidget(
+        windSpeed: windSpeed,
+        windGusts: windGusts,
+        direction: direction,
+        size: size,
+      );
+    } else if (label == 'УФ-индекс') {
+      content = UVIndexWidget( // Используйте новый виджет для УФ-индекса
+        uvIndex: uvIndex,
+        size: size,
+      );
+    }else if (label == 'Влажность') {
+      content = HumidityWidget(
+        humidity: humidity,
+        dewPoint: dewPoint,
+        size: size,
+      );
+    }else if (label == 'Осадки') {
+      content = RainfallWidget(
+        sizeRainfall: sizeRainfall,
+        size: size,
+      );
+    }
+    else{
+      content = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.white, size: 32),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+        ],
+      );
+    }
+
     return GestureDetector(
       onTap: () => _showBottomSheet(context, label),
       child: Container(
@@ -575,15 +689,26 @@ class HomeScreenContent extends StatelessWidget {
           color: Colors.white.withOpacity(0.15),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: Colors.white, size: 32),
-              const SizedBox(height: 8),
-              Text(label, style: const TextStyle(color: Colors.white, fontSize: 16)),
-            ],
-          ),
+        child: Stack(
+          children: [
+            // Основной контент
+            Center(child: content),
+            // Иконка и текст в левом верхнем углу
+            Positioned(
+              left: 8,
+              top: 8,
+              child: Row(
+                children: [
+                  Icon(icon, color: Colors.white, size: 20), // Иконка в левом верхнем углу
+                  const SizedBox(width: 4), // Пробел между иконкой и текстом
+                  Text(
+                    label,
+                    style: const TextStyle(color: Colors.white, fontSize: 12), // Лейбл в левом верхнем углу
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -163,12 +163,22 @@ class SwipeWrapper extends StatelessWidget {
                       end: Offset.zero,
                     ).chain(CurveTween(curve: Curves.ease)),
                   ),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: FractionallySizedBox(
-                      widthFactor: 0.8,
-                      child: const LocationSelectionScreen(),
-                    ),
+                  child: Stack(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          color: Colors.transparent,
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: 0.8,
+                          child: const LocationSelectionScreen(),
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -493,7 +503,7 @@ class HomeScreenContent extends StatelessWidget {
             child: Center(
               child: Column(
                 children: [
-                  Text('$high / $low', style: const TextStyle(color: Colors.white)),
+                  Text('$high°/ $low°', style: const TextStyle(color: Colors.white)),
                 ],
               ),
             ),
@@ -502,7 +512,7 @@ class HomeScreenContent extends StatelessWidget {
             flex: 1,
             child: Column(
               children: [
-                Text(rain, style: const TextStyle(color: Colors.white)),
+                Text( '$rain%', style: const TextStyle(color: Colors.white)),
               ],
             ),
           ),
